@@ -1,0 +1,333 @@
+call HOLA_MUNDO;
+
+CALL edad_clientes(1471156710);
+
+call mostrar_sabor('1101035');
+
+CALL MUESTRA_NUMERO;
+CALL concatenar_con_comentarios;
+
+CALL exhibir_variable;
+call manipulacion;
+
+SELECT * FROM tabla_de_productos WHERE NOMBRE_DEL_PRODUCTO LIKE 'Sabor In%';
+USE jugos_ventas;
+
+CALL incluir_producto_parametros( '1000800', 'Sabor del Mar', '700 ml', 'Naranja','Botella de Vidrio');
+
+SELECT * FROM tabla_de_productos;
+
+SELECT * FROM tabla_de_productos WHERE CODIGO_DEL_PRODUCTO = '1000800';
+
+/*
+CREATE DEFINER=`root`@`localhost` PROCEDURE `incluir_producto_parametros2`(vcodigo VARCHAR(20), vnombre VARCHAR(20),vsabor VARCHAR(20),
+vtamano VARCHAR(20), venvase VARCHAR(20), vprecio DECIMAL(4,2))
+BEGIN
+DECLARE mensaje VARCHAR(40);
+INSERT INTO tabla_de_productos (CODIGO_DEL_PRODUCTO,NOMBRE_DEL_PRODUCTO,SABOR,TAMANO,ENVASE,PRECIO_DE_LISTA)
+     VALUES (vcodigo, vnombre, vsabor, vtamano, venvase, vprecio);
+END
+ejecutar:
+CALL incluir_producto_parametros('1000800','Sabor del Mar',
+'Naranja', '700 ml', 'Botella de Vidrio', 2.25);
+*/
+-- Crea un SP para reajustar el % de comisión de los vendedores. Incluye como parámetro del SP el %, expresado en valor (Ex: 0,90).
+/*Nombre del Stored Procedure: reajuste_comision.
+
+VER OPINIÓN DEL INSTRUCTOR
+Opinión del instructor */
+
+DELIMITER $$
+CREATE PROCEDURE `reajuste_comision`(vporcentaje FLOAT)
+BEGIN
+UPDATE tabla_de_vendedores SET PORCENTAJE_COMISION =  PORCENTAJE_COMISION * (1 + vporcentaje);
+END $$
+
+/*
+Crea una variable llamada N_FACTURAS y atribuye a ella el número de facturas del día 01/01/2017. Muestra en el output del script el valor de la variable. (Nombra este Stored Procedure como cantidad_facturas).
+
+VER OPINIÓN DEL INSTRUCTOR
+Opinión del instructor:
+DELIMITER $$
+CREATE PROCEDURE `cantidad_facturas`()
+BEGIN
+DECLARE N_FACTURAS INTEGER;
+SELECT COUNT(*) INTO N_FACTURAS FROM facturas WHERE
+FECHA_VENTA = '2017-01-01';
+SELECT N_FACTURAS;
+END $$
+*/
+USE jugos_ventas;
+SELECT * FROM tabla_de_clientes;
+select FECHA_DE_NACIMIENTO FROM tabla_de_clientes WHERE DNI= ''
+
+CALL incluir_producto_parametros_error('1000801','Sabor del Mar',
+'Naranja', '700 ml', 'Botella de Vidrio', 3.25);
+
+/*
+Crea un Stored Procedure que, basado en una fecha, calcule el número de facturas. Si aparecen más de 70 facturas exhibimos el mensaje: ‘Muchas facturas’. En otro caso, exhibimos el mensaje ‘Pocas facturas’. También, debe exhibir el número de facturas. Llamaremos este Stored Procedure como: evaluacion_facturas.
+
+La fecha empleada para evaluar la cantidad de facturas será un parámetro del Stored Procedure.
+
+VER OPINIÓN DEL INSTRUCTOR
+Opinión del instructor
+
+DELIMITER $$
+CREATE PROCEDURE `evaluacion_facturas`(vfecha DATE)
+BEGIN
+DECLARE mensaje VARCHAR(50);
+DECLARE N_FACTURAS INTEGER;
+SELECT COUNT(*) INTO N_FACTURAS FROM facturas WHERE
+FECHA_VENTA = vfecha;
+IF N_FACTURAS > 70
+THEN SET mensaje = 'Muchas facturas' ;
+ELSE SET mensaje = 'Pocas facturas' ;
+END IF;
+SELECT mensaje;
+END $$
+*/
+CALL evaluacion_facturas();
+
+SELECT SUM(B.CANTIDAD * B.PRECIO) AS TOTAL_VENTA FROM 
+facturas A INNER JOIN items_facturas B
+ON A.NUMERO = B.NUMERO
+WHERE A.FECHA_VENTA = '20170301';
+
+/*
+
+Construye un Stored Procedure llamado comparacion_ventas que compare las ventas en dos fechas distintas (Estas fechas serán los parámetros de la SP). Si la variación porcentual de estas ventas es mayor al 10% la respuesta debe ser ‘Verde’. Si está entre -10% y 10% debe retornar ‘Amarillo’. Si la variación es menor al -10% debe retornar ‘Rojo’.
+
+VER OPINIÓN DEL INSTRUCTOR
+Opinión del instructor
+
+DELIMITER $$
+CREATE PROCEDURE `comparacion_ventas`(vfecha1 DATE, vfecha2 DATE)
+BEGIN
+DECLARE facturacion_inicial FLOAT;
+DECLARE facturacion_final FLOAT;
+DECLARE variacion float;
+SELECT SUM(B.CANTIDAD * B.PRECIO) INTO facturacion_inicial  FROM 
+facturas A INNER JOIN items_facturas B
+ON A.NUMERO = B.NUMERO
+WHERE A.FECHA_VENTA = vfecha1;
+SELECT SUM(B.CANTIDAD * B.PRECIO) INTO facturacion_final  FROM 
+facturas A INNER JOIN items_facturas B
+ON A.NUMERO = B.NUMERO
+WHERE A.FECHA_VENTA = vfecha2;
+SET variacion = ((facturacion_final / facturacion_inicial) -1) * 100;
+IF variacion > 10 THEN
+SELECT 'Verde';
+ELSEIF variacion >= -10 AND variacion <= 10 THEN
+SELECT 'Amarillo';
+ELSE
+SELECT 'Rojo';
+END IF;
+END $$
+
+/*
+
+///
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `precio_producto_case`(vcodigo VARCHAR(20))
+BEGIN
+declare vresultado VARCHAR(40);
+declare vprecio FLOAT;
+select PRECIO_DE_LISTA INTO vprecio from tabla_de_productos
+where CODIGO_DEL_PRODUCTO = vcodigo;
+CASE
+WHEN vprecio >= 12 THEN SET vresultado = 'Producto costoso.';
+WHEN vprecio >= 7 THEN SET vresultado = 'Producto asequible.';
+WHEN vprecio < 7 THEN SET vresultado = 'Producto barato.';
+END CASE;
+select vresultado;
+END
+$$
+
+call precio_producto_case('1000801');
+call precio_producto_case('1013793');
+call precio_producto_case('1096818');
+
+
+
+///Realiza el desafío anterior utilizando CASE condicional.
+
+VER OPINIÓN DEL INSTRUCTOR
+Opinión del instructor
+
+DELIMITER $$
+CREATE PROCEDURE `comparacion_ventas_case`(vfecha1 DATE, vfecha2 DATE)
+BEGIN
+DECLARE facturacion_inicial FLOAT;
+DECLARE facturacion_final FLOAT;
+DECLARE variacion float;
+DECLARE mensaje VARCHAR(20);
+SELECT SUM(B.CANTIDAD * B.PRECIO) INTO facturacion_inicial  FROM 
+facturas A INNER JOIN items_facturas B
+ON A.NUMERO = B.NUMERO
+WHERE A.FECHA_VENTA = vfecha1;
+SELECT SUM(B.CANTIDAD * B.PRECIO) INTO facturacion_final  FROM 
+facturas A INNER JOIN items_facturas B
+ON A.NUMERO = B.NUMERO
+WHERE A.FECHA_VENTA = vfecha2;
+SET variacion = ((facturacion_final / facturacion_inicial) -1) * 100;
+CASE
+WHEN variacion > 10 THEN SET mensaje = 'Verde';
+WHEN variacion >= -10 AND variacion <= 10 THEN SET mensaje = 'Amarillo';
+WHEN varacion < -10 THEN SET mensaje = 'Rojo';
+END CASE;
+SELECT mensaje;
+END $$
+
+
+///
+Teniendo en cuenta que la siguiente función añade 1 día a la fecha:
+
+SELECT ADDDATE(FECHA_VENTA, INTERVAL 1 DAY);COPIA EL CÓDIGO
+Crea un Stored Procedure que, a partir del día 01/01/2017, cuente el número de facturas hasta el día 10/01/2017. Debemos mostrar la fecha y el número de facturas día tras día. Llamaremos este SP como: suma_dias_facturas.
+
+Tips:
+
+Declara variables del tipo DATE: Fecha inicial y fecha final; Haz un loop para probar que la fecha inicial < fecha final; muestra en el output de MySQL la fecha y el número de facturas. No olvides convertir las variables en tipo VARCHAR; Suma la fecha en 1 día.
+
+VER OPINIÓN DEL INSTRUCTOR
+Opinión del instructor
+
+DELIMITER $$
+CREATE PROCEDURE `suma_dias_facturas`()
+BEGIN
+DECLARE fecha_inicial DATE;
+DECLARE fecha_final DATE;
+DECLARE n_facturas INT;
+SET fecha_inicial = '20170101';
+SET fecha_final = '20170110';
+WHILE fecha_inicial <= fecha_final
+DO
+SELECT COUNT(*) INTO n_facturas  FROM facturas WHERE FECHA_VENTA = fecha_inicial;
+SELECT concat(DATE_FORMAT(fecha_inicial, '%d/%m/%Y'), '-' , CAST(n_facturas AS CHAR(50))) AS RESULTADO;
+SELECT ADDDATE(fecha_inicial, INTERVAL 1 DAY) INTO fecha_inicial;
+END WHILE;
+END $$
+
+
+///
+Crea un Stored Procedure usando un cursor para hallar el valor total de todos los créditos de todos los clientes. Llamaremos este SP como: limite_creditos.
+
+Tips:
+
+Declara dos variables: Una que recibe el límite de crédito del cursor y otra el límite de crédito total; haz un loop en el cursor y ve sumando en la variable límite de crédito total el valor del límite de cada cliente; Exhibe el valor total del límite.
+
+VER OPINIÓN DEL INSTRUCTOR
+Opinión del instructor
+
+DELIMITER $$
+CREATE PROCEDURE `limite_creditos`()
+BEGIN
+DECLARE limite_credito FLOAT;
+DECLARE limite_credito_acumulado FLOAT;
+DECLARE fin_cursor INT;
+DECLARE c CURSOR FOR SELECT LIMITE_DE_CREDITO FROM tabla_de_clientes;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET fin_cursor = 1;
+SET fin_cursor = 0;
+SET limite_credito_acumulado = 0;
+SET limite_credito = 0;
+OPEN c;
+WHILE fin_cursor = 0
+DO
+FETCH c INTO limite_credito;
+IF fin_cursor = 0 
+THEN SET limite_credito_acumulado = limite_credito_acumulado + limite_credito;
+END IF;
+END WHILE;
+SELECT limite_credito_acumulado;
+CLOSE c;
+END $$
+
+//
+CREATE DEFINER=`root`@`localhost` PROCEDURE `cursor_1`()
+BEGIN
+DECLARE vnombre VARCHAR(50);
+DECLARE c CURSOR FOR SELECT NOMBRE FROM tabla_de_clientes LIMIT 4;
+OPEN c;
+FETCH c INTO vnombre;
+SELECT vnombre;
+FETCH c INTO vnombre;
+SELECT vnombre;
+FETCH c INTO vnombre;
+SELECT vnombre;
+FETCH c INTO vnombre;
+SELECT vnombre;
+FETCH c INTO vnombre;
+SELECT vnombre;
+CLOSE c;
+END
+
+
+
+//
+CREATE DEFINER=`root`@`localhost` PROCEDURE `looping_cursor`()
+BEGIN
+DECLARE fin_c INT DEFAULT 0;
+DECLARE vnombre VARCHAR(50);
+DECLARE c CURSOR FOR SELECT NOMBRE FROM tabla_de_clientes;
+DECLARE CONTINUE HANDLER FOR NOT FOUND
+SET fin_c = 1;
+OPEN c;
+WHILE fin_c = 0
+DO
+FETCH c INTO vnombre;
+IF fin_c = 0
+THEN SELECT vnombre;
+END IF;
+END WHILE;
+CLOSE c;
+END
+
+//
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `precio_producto_case`(vcodigo VARCHAR(20))
+BEGIN
+declare vresultado VARCHAR(40);
+declare vprecio FLOAT;
+select PRECIO_DE_LISTA INTO vprecio from tabla_de_productos
+where CODIGO_DEL_PRODUCTO = vcodigo;
+CASE
+WHEN vprecio >= 12 THEN SET vresultado = 'Producto costoso.';
+WHEN vprecio >= 7 THEN SET vresultado = 'Producto asequible.';
+WHEN vprecio < 7 THEN SET vresultado = 'Producto barato.';
+END CASE;
+select vresultado;
+END
+$$
+
+call precio_producto_case('1000801');
+call precio_producto_case('1013793');
+call precio_producto_case('1096818');
+
+call problema_select_into;
+
+call cursor_1;
+CALL looping_cursor;
+
+//
+use jugos_ventas;
+SELECT * FROM tabla_de_productos;
+
+SELECT distinct SABOR FROM tabla_de_productos;
+
+SELECT distinct SABOR FROM tabla_de_productos where CODIGO_DEL_PRODUCTO = '1002767' ;
+
+SELECT SABOR, CODIGO_DEL_PRODUCTO from tabla_de_productos;
+CALL define_sabor('544931');
+
+CALL define_sabor_con_error('1000800');
+call precio_producto('1000801');
+call precio_producto('1013793');
+call precio_producto('1096818');
+
+create table tb_looping(ID INT);
+SELECT *FROM tb_looping;
+
+CALL looping(1,10);
+
+SELECT ADDDATE(FECHA_VENTA, INTERVAL 1 DAY);
+CALL suma_dias_facturas();
